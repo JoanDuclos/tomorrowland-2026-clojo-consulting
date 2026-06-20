@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ma Timetable — Tomorrowland Belgium 2026 W1</title>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 4px; }
+  input::placeholder { color: rgba(255,255,255,0.3); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+// ⚠️ COLLE ICI L'URL DE TON GOOGLE APPS SCRIPT DÉPLOYÉ (voir INSTRUCTIONS.md)
+const API_URL = "https://script.google.com/macros/s/AKfycbwDSzyaryRIEMPvvV7HSTGZ-c63og4WlJ5yBk0PQ8wOoYd25JGeq7161lmhFR2CyATinQ/exec";
+
+const STAGES = {
+  "Mainstage": { color: "#FFD700", text: "#000" },
+  "Freedom by Bud": { color: "#FF6B35", text: "#000" },
+  "The Rose Garden": { color: "#E91E8C", text: "#fff" },
+  "Elixir": { color: "#FF9800", text: "#000" },
+  "Cage": { color: "#FF5252", text: "#fff" },
+  "The Rave Cave": { color: "#9C27B0", text: "#fff" },
+  "Planaxis": { color: "#00BCD4", text: "#000" },
+  "Melodia by Corona": { color: "#F9A825", text: "#000" },
+  "Celestia by Kucoin": { color: "#26C6DA", text: "#000" },
+  "Atmosphere": { color: "#00C9A7", text: "#000" },
+  "Core": { color: "#FF3CAC", text: "#fff" },
+  "Crystal Garden": { color: "#a78bfa", text: "#000" },
+  "The Great Library": { color: "#7B61FF", text: "#fff" },
+  "Moose Bar": { color: "#795548", text: "#fff" },
+  "House of Fortune by JBL": { color: "#607D8B", text: "#fff" },
+};
+
+const DAYS = ["Vendredi 17 juillet", "Samedi 18 juillet", "Dimanche 19 juillet"];
+
+const ALL_ARTISTS = [
+  // ════════════════════════════════════════════════════════
+  // VENDREDI 17 JUILLET
+  // ════════════════════════════════════════════════════════
+  { name: "Discovery", stage: "Mainstage", day: 0, start: "12:00", end: "14:00" },
+  { name: "Vintage Culture", stage: "Mainstage", day: 0, start: "14:00", end: "15:30" },
+  { name: "Disco Lines", stage: "Mainstage", day: 0, start: "15:30", end: "16:30" },
+  { name: "Bassjackers", stage: "Mainstage", day: 0, start: "16:30", end: "17:30" },
+  { name: "Henri PFR", stage: "Mainstage", day: 0, start: "17:35", end: "18:35" },
+  { name: "Nervo", stage: "Mainstage", day: 0, start: "18:40", end: "19:40" },
+  { name: "Marlon Hoffstadt", stage: "Mainstage", day: 0, start: "19:40", end: "20:40" },
+  { name: "Novah", stage: "Mainstage", day: 0, start: "20:40", end: "21:40" },
+  { name: "The Chainsmokers", stage: "Mainstage", day: 0, start: "21:45", end: "22:45" },
+  { name: "Sebastian Ingrosso", stage: "Mainstage", day: 0, start: "22:50", end: "23:50" },
+  { name: "Martin Garrix", stage: "Mainstage", day: 0, start: "23:50", end: "00:50" },
+  { name: "Semsei", stage: "Freedom by Bud", day: 0, start: "12:00", end: "13:30" },
+  { name: "Jesabel", stage: "Freedom by Bud", day: 0, start: "13:30", end: "15:00" },
+  { name: "Rose Ringed", stage: "Freedom by Bud", day: 0, start: "15:00", end: "16:30" },
+  { name: "Frank Verstraeten", stage: "Freedom by Bud", day: 0, start: "16:30", end: "18:00" },
+  { name: "Max Styler", stage: "Freedom by Bud", day: 0, start: "18:00", end: "19:30" },
+  { name: "Miss Monique", stage: "Freedom by Bud", day: 0, start: "19:30", end: "21:00" },
+  { name: "Mind Against", stage: "Freedom by Bud", day: 0, start: "21:00", end: "22:30" },
+  { name: "4444 OF A KIND", stage: "Freedom by Bud", day: 0, start: "22:30", end: "23:30" },
+  { name: "Holy Priest", stage: "Freedom by Bud", day: 0, start: "23:30", end: "00:30" },
+  { name: "Synoxis", stage: "The Rose Garden", day: 0, start: "12:00", end: "13:30" },
+  { name: "MAE.LIEN", stage: "The Rose Garden", day: 0, start: "13:30", end: "14:30" },
+  { name: "Anton Invicta", stage: "The Rose Garden", day: 0, start: "14:30", end: "16:00" },
+  { name: "STOOG3S", stage: "The Rose Garden", day: 0, start: "16:00", end: "17:00" },
+  { name: "Blooom b2b Sudley", stage: "The Rose Garden", day: 0, start: "17:00", end: "18:00" },
+  { name: "Primate", stage: "The Rose Garden", day: 0, start: "18:00", end: "19:00" },
+  { name: "ÆON:MODE", stage: "The Rose Garden", day: 0, start: "19:00", end: "20:00" },
+  { name: "Murdock", stage: "The Rose Garden", day: 0, start: "20:00", end: "21:00" },
+  { name: "A Little Sound", stage: "The Rose Garden", day: 0, start: "21:00", end: "22:00" },
+  { name: "Kanine", stage: "The Rose Garden", day: 0, start: "22:00", end: "23:00" },
+  { name: "Alison Wonderland", stage: "The Rose Garden", day: 0, start: "23:00", end: "00:00" },
+  { name: "Camo & Krooked", stage: "The Rose Garden", day: 0, start: "00:00", end: "01:00" },
+  { name: "Monsieur", stage: "Elixir", day: 0, start: "13:00", end: "14:30" },
+  { name: "High Grade Sound", stage: "Elixir", day: 0, start: "14:30", end: "16:00" },
+  { name: "Millinguap", stage: "Elixir", day: 0, start: "16:00", end: "17:00" },
+  { name: "Soul Shakers", stage: "Elixir", day: 0, start: "17:00", end: "18:00" },
+  { name: "Flavour Drop", stage: "Elixir", day: 0, start: "18:00", end: "19:30" },
+  { name: "Tola OG", stage: "Elixir", day: 0, start: "19:30", end: "20:30" },
+  { name: "Nona Van Bra...", stage: "Elixir", day: 0, start: "20:30", end: "21:30" },
+  { name: "Unregular", stage: "Elixir", day: 0, start: "21:30", end: "22:30" },
+  { name: "Audiowave", stage: "Elixir", day: 0, start: "22:30", end: "23:30" },
+  { name: "Rick & James 80's Party", stage: "Elixir", day: 0, start: "23:30", end: "01:00" },
+  { name: "Sacha Malice", stage: "Cage", day: 0, start: "12:00", end: "13:00" },
+  { name: "RAYZEN", stage: "Cage", day: 0, start: "13:00", end: "14:00" },
+  { name: "SANDY WARE...", stage: "Cage", day: 0, start: "14:00", end: "15:00" },
+  { name: "elMefti", stage: "Cage", day: 0, start: "15:00", end: "16:00" },
+  { name: "Lolalita & Bren...", stage: "Cage", day: 0, start: "16:00", end: "17:00" },
+  { name: "VON BIKRÄV", stage: "Cage", day: 0, start: "17:00", end: "18:00" },
+  { name: "DITHER", stage: "Cage", day: 0, start: "18:00", end: "19:00" },
+  { name: "GPF b2b DR D...", stage: "Cage", day: 0, start: "19:00", end: "20:00" },
+  { name: "MIND COMPR...", stage: "Cage", day: 0, start: "20:00", end: "21:00" },
+  { name: "LUNAKORPZ", stage: "Cage", day: 0, start: "21:00", end: "22:00" },
+  { name: "VERNEX b2b ...", stage: "Cage", day: 0, start: "22:00", end: "23:00" },
+  { name: "Thomas Moulene", stage: "The Rave Cave", day: 0, start: "14:30", end: "16:00" },
+  { name: "Panda Sound...", stage: "The Rave Cave", day: 0, start: "16:00", end: "17:00" },
+  { name: "Paloma", stage: "The Rave Cave", day: 0, start: "17:00", end: "18:30" },
+  { name: "ZUKE", stage: "The Rave Cave", day: 0, start: "18:30", end: "19:30" },
+  { name: "Justin Wilkes", stage: "The Rave Cave", day: 0, start: "19:30", end: "21:00" },
+  { name: "Nastya Dikikh", stage: "The Rave Cave", day: 0, start: "21:00", end: "22:00" },
+  { name: "CVNTS", stage: "The Rave Cave", day: 0, start: "22:00", end: "23:00" },
+  { name: "Junkie Kid", stage: "The Rave Cave", day: 0, start: "23:00", end: "00:00" },
+  { name: "Cyborg-18", stage: "Planaxis", day: 0, start: "12:00", end: "13:00" },
+  { name: "Yannick Thiry", stage: "Planaxis", day: 0, start: "13:00", end: "14:00" },
+  { name: "Trip-Tamine", stage: "Planaxis", day: 0, start: "14:00", end: "15:00" },
+  { name: "John OO Fleming", stage: "Planaxis", day: 0, start: "15:00", end: "16:00" },
+  { name: "Firaga", stage: "Planaxis", day: 0, start: "16:00", end: "17:00" },
+  { name: "Somnia", stage: "Planaxis", day: 0, start: "17:00", end: "18:00" },
+  { name: "Hi Profile", stage: "Planaxis", day: 0, start: "18:00", end: "19:00" },
+  { name: "Fabio Fusco", stage: "Planaxis", day: 0, start: "19:00", end: "20:00" },
+  { name: "Neelix", stage: "Planaxis", day: 0, start: "20:00", end: "21:30" },
+  { name: "Omiki", stage: "Planaxis", day: 0, start: "21:30", end: "22:30" },
+  { name: "Mad Maxx", stage: "Planaxis", day: 0, start: "22:30", end: "00:00" },
+  { name: "Isa Roos", stage: "Melodia by Corona", day: 0, start: "12:00", end: "13:30" },
+  { name: "Lerato Tsotetsi", stage: "Melodia by Corona", day: 0, start: "13:30", end: "15:00" },
+  { name: "Rosey Gold", stage: "Melodia by Corona", day: 0, start: "15:00", end: "16:30" },
+  { name: "Thakzin", stage: "Melodia by Corona", day: 0, start: "16:30", end: "18:00" },
+  { name: "Danni Gato", stage: "Melodia by Corona", day: 0, start: "18:00", end: "19:00" },
+  { name: "Vanco", stage: "Melodia by Corona", day: 0, start: "19:00", end: "20:30" },
+  { name: "AWEN", stage: "Melodia by Corona", day: 0, start: "20:30", end: "22:00" },
+  { name: "Da Capo b2b Caiiro b2b Enoo Napa", stage: "Melodia by Corona", day: 0, start: "22:00", end: "00:00" },
+  { name: "ROOX", stage: "Celestia by Kucoin", day: 0, start: "12:00", end: "13:00" },
+  { name: "MRMK", stage: "Celestia by Kucoin", day: 0, start: "13:00", end: "14:00" },
+  { name: "Juno", stage: "Celestia by Kucoin", day: 0, start: "14:00", end: "15:30" },
+  { name: "Rozie", stage: "Celestia by Kucoin", day: 0, start: "15:30", end: "17:00" },
+  { name: "Diffrent", stage: "Celestia by Kucoin", day: 0, start: "17:00", end: "18:30" },
+  { name: "MPH", stage: "Celestia by Kucoin", day: 0, start: "18:30", end: "20:00" },
+  { name: "Olive Anguz", stage: "Celestia by Kucoin", day: 0, start: "20:00", end: "21:30" },
+  { name: "Bennett", stage: "Celestia by Kucoin", day: 0, start: "21:30", end: "23:00" },
+  { name: "Bisoux", stage: "Atmosphere", day: 0, start: "12:00", end: "14:00" },
+  { name: "ROW1", stage: "Atmosphere", day: 0, start: "14:00", end: "15:30" },
+  { name: "Peterblue", stage: "Atmosphere", day: 0, start: "15:30", end: "17:00" },
+  { name: "simOne b2b Southstar", stage: "Atmosphere", day: 0, start: "17:00", end: "18:30" },
+  { name: "KUKO", stage: "Atmosphere", day: 0, start: "18:30", end: "20:00" },
+  { name: "MANDY b2b NEGITIV", stage: "Atmosphere", day: 0, start: "20:00", end: "21:30" },
+  { name: "Nico Moreno", stage: "Atmosphere", day: 0, start: "21:30", end: "23:00" },
+  { name: "Sara Landry", stage: "Atmosphere", day: 0, start: "23:00", end: "00:55" },
+  { name: "Eileen", stage: "Core", day: 0, start: "12:00", end: "14:00" },
+  { name: "John Noseda b2b Kenny Montana", stage: "Core", day: 0, start: "14:00", end: "17:00" },
+  { name: "Bibi Seck", stage: "Core", day: 0, start: "17:00", end: "19:00" },
+  { name: "Sally C", stage: "Core", day: 0, start: "19:00", end: "21:00" },
+  { name: "Sasha b2b Young Marco", stage: "Core", day: 0, start: "21:00", end: "23:00" },
+  { name: "Modeselektor (DJ-set)", stage: "Core", day: 0, start: "23:00", end: "00:50" },
+  { name: "DJORA", stage: "Crystal Garden", day: 0, start: "12:00", end: "13:30" },
+  { name: "Eridu", stage: "Crystal Garden", day: 0, start: "13:30", end: "15:00" },
+  { name: "Marsolo", stage: "Crystal Garden", day: 0, start: "15:00", end: "16:30" },
+  { name: "Camila Jun", stage: "Crystal Garden", day: 0, start: "16:30", end: "18:00" },
+  { name: "BLOND:ISH", stage: "Crystal Garden", day: 0, start: "19:30", end: "21:00" },
+  { name: "Kettama b2b Michael Bibi", stage: "Crystal Garden", day: 0, start: "21:00", end: "23:00" },
+  { name: "Franky Rizardo", stage: "Crystal Garden", day: 0, start: "23:00", end: "00:30" },
+  { name: "MagiK", stage: "The Great Library", day: 0, start: "12:00", end: "13:00" },
+  { name: "Manuals", stage: "The Great Library", day: 0, start: "13:00", end: "14:00" },
+  { name: "Tomas Grey", stage: "The Great Library", day: 0, start: "14:00", end: "15:00" },
+  { name: "DJ Sally", stage: "The Great Library", day: 0, start: "15:00", end: "16:00" },
+  { name: "Whisnu Santika", stage: "The Great Library", day: 0, start: "16:00", end: "17:00" },
+  { name: "Mike Williams", stage: "The Great Library", day: 0, start: "17:00", end: "18:00" },
+  { name: "Sam Feldt", stage: "The Great Library", day: 0, start: "18:00", end: "19:00" },
+  { name: "Da Tweekaz", stage: "The Great Library", day: 0, start: "19:00", end: "20:00" },
+  { name: "Ofenbach", stage: "The Great Library", day: 0, start: "20:00", end: "21:00" },
+  { name: "R3hab", stage: "The Great Library", day: 0, start: "21:00", end: "22:00" },
+  { name: "ARTBAT", stage: "The Great Library", day: 0, start: "22:00", end: "23:00" },
+  { name: "Nicky Romero", stage: "The Great Library", day: 0, start: "23:00", end: "00:00" },
+  { name: "Hardwell b2b...", stage: "The Great Library", day: 0, start: "00:00", end: "00:55" },
+  { name: "Bosart", stage: "Moose Bar", day: 0, start: "12:00", end: "16:00" },
+  { name: "Rino", stage: "Moose Bar", day: 0, start: "16:00", end: "19:00" },
+  { name: "Wilbert Pigmans", stage: "Moose Bar", day: 0, start: "19:00", end: "20:00" },
+  { name: "Funktastix", stage: "Moose Bar", day: 0, start: "20:00", end: "00:00" },
+  { name: "Fran Ares", stage: "House of Fortune by JBL", day: 0, start: "14:00", end: "15:00" },
+  { name: "Lucca Van Da...", stage: "House of Fortune by JBL", day: 0, start: "15:00", end: "16:00" },
+  { name: "StadiumX", stage: "House of Fortune by JBL", day: 0, start: "16:00", end: "17:00" },
+  { name: "Amber Broos...", stage: "House of Fortune by JBL", day: 0, start: "17:00", end: "18:00" },
+  { name: "Conrad Taylor", stage: "House of Fortune by JBL", day: 0, start: "18:00", end: "19:00" },
+  { name: "Nicky Romero (HoF)", stage: "House of Fortune by JBL", day: 0, start: "19:00", end: "20:00" },
+  { name: "Mike Williams (HoF)", stage: "House of Fortune by JBL", day: 0, start: "20:00", end: "21:00" },
+  { name: "Gravagerz", stage: "House of Fortune by JBL", day: 0, start: "21:00", end: "22:00" },
+
+  // ════════════════════════════════════════════════════════
+  // SAMEDI 18 JUILLET
+  // ════════════════════════════════════════════════════════
+  { name: "Discovery", stage: "Mainstage", day: 1, start: "12:00", end: "14:00" },
+  { name: "Merow", stage: "Mainstage", day: 1, start: "14:00", end: "15:00" },
+  { name: "Stephani B", stage: "Mainstage", day: 1, start: "15:00", end: "16:00" },
+  { name: "Omdat Het Ka...", stage: "Mainstage", day: 1, start: "16:00", end: "17:00" },
+  { name: "Maddix", stage: "Mainstage", day: 1, start: "17:05", end: "18:05" },
+  { name: "HALÖ", stage: "Mainstage", day: 1, start: "18:10", end: "19:10" },
+  { name: "Boris Brejcha", stage: "Mainstage", day: 1, start: "19:10", end: "20:10" },
+  { name: "John Newman", stage: "Mainstage", day: 1, start: "20:10", end: "21:10" },
+  { name: "Fisher", stage: "Mainstage", day: 1, start: "21:15", end: "22:15" },
+  { name: "Dimitri Vegas & Like Mike", stage: "Mainstage", day: 1, start: "22:20", end: "23:35" },
+  { name: "David Guetta", stage: "Mainstage", day: 1, start: "23:35", end: "00:50" },
+  { name: "Dave Lambert", stage: "Freedom by Bud", day: 1, start: "12:00", end: "13:30" },
+  { name: "Luna & Lenthe", stage: "Freedom by Bud", day: 1, start: "13:30", end: "15:00" },
+  { name: "Plastik Funk b2b Olympe", stage: "Freedom by Bud", day: 1, start: "15:00", end: "16:30" },
+  { name: "Space 92", stage: "Freedom by Bud", day: 1, start: "16:30", end: "18:00" },
+  { name: "Symphony Of...", stage: "Freedom by Bud", day: 1, start: "18:00", end: "19:00" },
+  { name: "Meduza", stage: "Freedom by Bud", day: 1, start: "19:00", end: "20:00" },
+  { name: "Netsky", stage: "Freedom by Bud", day: 1, start: "20:00", end: "21:00" },
+  { name: "Symphony Of... (2)", stage: "Freedom by Bud", day: 1, start: "21:00", end: "22:00" },
+  { name: "Armin van Buuren", stage: "Freedom by Bud", day: 1, start: "22:00", end: "00:30" },
+  { name: "Just-K", stage: "The Rose Garden", day: 1, start: "12:00", end: "13:00" },
+  { name: "Phi Phi", stage: "The Rose Garden", day: 1, start: "13:00", end: "14:00" },
+  { name: "Jente b2b Neall", stage: "The Rose Garden", day: 1, start: "14:00", end: "15:00" },
+  { name: "Blvckprint", stage: "The Rose Garden", day: 1, start: "15:00", end: "16:00" },
+  { name: "Greg S.", stage: "The Rose Garden", day: 1, start: "16:00", end: "17:00" },
+  { name: "DJ Furax", stage: "The Rose Garden", day: 1, start: "17:00", end: "18:00" },
+  { name: "DJ Ghost", stage: "The Rose Garden", day: 1, start: "18:00", end: "19:00" },
+  { name: "Push", stage: "The Rose Garden", day: 1, start: "19:00", end: "20:00" },
+  { name: "Jan Vervloet", stage: "The Rose Garden", day: 1, start: "20:00", end: "21:00" },
+  { name: "Funkhauser", stage: "The Rose Garden", day: 1, start: "21:00", end: "22:00" },
+  { name: "Franky Kloeck", stage: "The Rose Garden", day: 1, start: "22:00", end: "23:00" },
+  { name: "X-Tof", stage: "The Rose Garden", day: 1, start: "23:00", end: "00:00" },
+  { name: "Bonzai All Stars", stage: "The Rose Garden", day: 1, start: "00:00", end: "01:00" },
+  { name: "Sojuju & Julia...", stage: "Elixir", day: 1, start: "13:00", end: "14:00" },
+  { name: "Lordesius & A...", stage: "Elixir", day: 1, start: "14:00", end: "15:00" },
+  { name: "Pretty Girls Li...", stage: "Elixir", day: 1, start: "15:00", end: "16:00" },
+  { name: "Ballantine & D...", stage: "Elixir", day: 1, start: "16:00", end: "17:00" },
+  { name: "WEF", stage: "Elixir", day: 1, start: "17:00", end: "18:00" },
+  { name: "MELVIEE", stage: "Elixir", day: 1, start: "18:00", end: "19:00" },
+  { name: "Vunzige Deunt...", stage: "Elixir", day: 1, start: "19:00", end: "20:00" },
+  { name: "Kurashi Sound...", stage: "Elixir", day: 1, start: "20:00", end: "21:00" },
+  { name: "Encore Sound...", stage: "Elixir", day: 1, start: "21:00", end: "22:00" },
+  { name: "Rockefellababe", stage: "Elixir", day: 1, start: "22:00", end: "23:00" },
+  { name: "Afrolosjes Sou...", stage: "Elixir", day: 1, start: "23:00", end: "00:00" },
+  { name: "Steww Sounds...", stage: "Elixir", day: 1, start: "00:00", end: "01:00" },
+  { name: "Luna Fields", stage: "Cage", day: 1, start: "12:00", end: "14:00" },
+  { name: "Maike Depas", stage: "Cage", day: 1, start: "14:00", end: "15:30" },
+  { name: "Not My Type", stage: "Cage", day: 1, start: "15:30", end: "17:00" },
+  { name: "A.N.I.", stage: "Cage", day: 1, start: "17:00", end: "18:30" },
+  { name: "Dexphase", stage: "Cage", day: 1, start: "18:30", end: "20:00" },
+  { name: "Byorn", stage: "Cage", day: 1, start: "20:00", end: "21:30" },
+  { name: "Vieze Asbak", stage: "Cage", day: 1, start: "21:30", end: "23:00" },
+  { name: "The Spook", stage: "The Rave Cave", day: 1, start: "13:00", end: "14:00" },
+  { name: "Los Bomberos", stage: "The Rave Cave", day: 1, start: "14:00", end: "15:00" },
+  { name: "Aghatixx", stage: "The Rave Cave", day: 1, start: "15:00", end: "16:00" },
+  { name: "Brits & Boen", stage: "The Rave Cave", day: 1, start: "16:00", end: "17:30" },
+  { name: "Monta", stage: "The Rave Cave", day: 1, start: "17:30", end: "19:00" },
+  { name: "Vitucci", stage: "The Rave Cave", day: 1, start: "19:00", end: "20:30" },
+  { name: "Soulcity", stage: "The Rave Cave", day: 1, start: "20:30", end: "22:00" },
+  { name: "Bobby & Djenko", stage: "The Rave Cave", day: 1, start: "22:00", end: "23:30" },
+  { name: "Jonas van Opstal", stage: "The Rave Cave", day: 1, start: "23:30", end: "01:00" },
+  { name: "D'Angelo & Fr...", stage: "Planaxis", day: 1, start: "12:00", end: "13:00" },
+  { name: "Chocolate Puma", stage: "Planaxis", day: 1, start: "13:00", end: "14:00" },
+  { name: "Marnik", stage: "Planaxis", day: 1, start: "14:00", end: "15:00" },
+  { name: "Kaaze", stage: "Planaxis", day: 1, start: "15:00", end: "16:00" },
+  { name: "Ian Asher", stage: "Planaxis", day: 1, start: "16:00", end: "17:00" },
+  { name: "Quintino", stage: "Planaxis", day: 1, start: "17:00", end: "18:00" },
+  { name: "Laidback Luke", stage: "Planaxis", day: 1, start: "18:00", end: "19:00" },
+  { name: "SURPRISE (Planaxis)", stage: "Planaxis", day: 1, start: "19:00", end: "20:00" },
+  { name: "Lucas & Steve", stage: "Planaxis", day: 1, start: "20:00", end: "21:00" },
+  { name: "Bassjackers (Planaxis)", stage: "Planaxis", day: 1, start: "21:00", end: "22:00" },
+  { name: "DVBBS", stage: "Planaxis", day: 1, start: "22:00", end: "23:00" },
+  { name: "Steve Aoki", stage: "Planaxis", day: 1, start: "23:00", end: "23:50" },
+  { name: "LYA", stage: "Melodia by Corona", day: 1, start: "12:00", end: "13:30" },
+  { name: "Hermanos Inglesos", stage: "Melodia by Corona", day: 1, start: "13:30", end: "15:00" },
+  { name: "Emiliano Demarco", stage: "Melodia by Corona", day: 1, start: "15:00", end: "16:30" },
+  { name: "UNREAD", stage: "Melodia by Corona", day: 1, start: "16:30", end: "18:00" },
+  { name: "Chinonegro", stage: "Melodia by Corona", day: 1, start: "18:00", end: "19:00" },
+  { name: "Idemi", stage: "Melodia by Corona", day: 1, start: "19:00", end: "20:30" },
+  { name: "Sam Shure", stage: "Melodia by Corona", day: 1, start: "20:30", end: "22:00" },
+  { name: "Twenty Six", stage: "Melodia by Corona", day: 1, start: "22:00", end: "23:00" },
+  { name: "Arado", stage: "Melodia by Corona", day: 1, start: "23:00", end: "00:00" },
+  { name: "Sef sansT", stage: "Celestia by Kucoin", day: 1, start: "12:00", end: "13:00" },
+  { name: "Sebsky", stage: "Celestia by Kucoin", day: 1, start: "13:00", end: "14:00" },
+  { name: "Encure b2b H...", stage: "Celestia by Kucoin", day: 1, start: "14:00", end: "15:00" },
+  { name: "Joyse b2b Rya...", stage: "Celestia by Kucoin", day: 1, start: "15:00", end: "16:00" },
+  { name: "Block & Crow...", stage: "Celestia by Kucoin", day: 1, start: "16:00", end: "17:00" },
+  { name: "Diego Miranda...", stage: "Celestia by Kucoin", day: 1, start: "17:00", end: "18:00" },
+  { name: "Dimitri Vangeli...", stage: "Celestia by Kucoin", day: 1, start: "18:00", end: "19:00" },
+  { name: "Yves V", stage: "Celestia by Kucoin", day: 1, start: "19:00", end: "20:00" },
+  { name: "Dj Nano", stage: "Celestia by Kucoin", day: 1, start: "20:00", end: "21:00" },
+  { name: "Matisse & Sadko", stage: "Celestia by Kucoin", day: 1, start: "21:00", end: "22:00" },
+  { name: "Will Sparks", stage: "Celestia by Kucoin", day: 1, start: "22:00", end: "23:00" },
+  { name: "Interactive Noise", stage: "Atmosphere", day: 1, start: "12:00", end: "14:00" },
+  { name: "Marhu", stage: "Atmosphere", day: 1, start: "14:00", end: "15:30" },
+  { name: "Estella Boersma", stage: "Atmosphere", day: 1, start: "15:30", end: "17:00" },
+  { name: "Elli Acula", stage: "Atmosphere", day: 1, start: "17:00", end: "18:30" },
+  { name: "Ben Klock", stage: "Atmosphere", day: 1, start: "18:30", end: "20:00" },
+  { name: "BIIA b2b Charlie Sparks", stage: "Atmosphere", day: 1, start: "20:00", end: "21:30" },
+  { name: "Indira Paganotto", stage: "Atmosphere", day: 1, start: "21:30", end: "23:30" },
+  { name: "Reinier Zonneveld (live)", stage: "Atmosphere", day: 1, start: "23:30", end: "00:55" },
+  { name: "Capoon", stage: "Core", day: 1, start: "12:00", end: "13:30" },
+  { name: "Curol", stage: "Core", day: 1, start: "13:30", end: "15:00" },
+  { name: "Betical", stage: "Core", day: 1, start: "15:00", end: "16:30" },
+  { name: "Dino Lenny", stage: "Core", day: 1, start: "16:30", end: "18:00" },
+  { name: "Antdot", stage: "Core", day: 1, start: "18:00", end: "19:30" },
+  { name: "SAMM b2b Ajna", stage: "Core", day: 1, start: "19:30", end: "21:30" },
+  { name: "Carlita b2b Malive", stage: "Core", day: 1, start: "21:30", end: "23:00" },
+  { name: "Bedouin", stage: "Core", day: 1, start: "23:00", end: "00:50" },
+  { name: "Cici Daze", stage: "Crystal Garden", day: 1, start: "12:00", end: "13:30" },
+  { name: "DALI", stage: "Crystal Garden", day: 1, start: "13:30", end: "15:00" },
+  { name: "NOSI", stage: "Crystal Garden", day: 1, start: "15:00", end: "17:00" },
+  { name: "Dean Turnley", stage: "Crystal Garden", day: 1, start: "17:00", end: "18:30" },
+  { name: "Ben Hemsley", stage: "Crystal Garden", day: 1, start: "18:30", end: "20:00" },
+  { name: "Morten b2b Malaa", stage: "Crystal Garden", day: 1, start: "20:00", end: "21:30" },
+  { name: "Steve Angello", stage: "Crystal Garden", day: 1, start: "21:30", end: "00:30" },
+  { name: "Marvin & Cam...", stage: "The Great Library", day: 1, start: "12:00", end: "13:00" },
+  { name: "CIEL.", stage: "The Great Library", day: 1, start: "13:00", end: "14:00" },
+  { name: "Marwan Dua", stage: "The Great Library", day: 1, start: "14:00", end: "15:00" },
+  { name: "Linska", stage: "The Great Library", day: 1, start: "15:00", end: "16:00" },
+  { name: "More to be an...", stage: "The Great Library", day: 1, start: "16:00", end: "17:00" },
+  { name: "Jazzy", stage: "The Great Library", day: 1, start: "17:00", end: "18:00" },
+  { name: "Andromedik", stage: "The Great Library", day: 1, start: "18:00", end: "19:00" },
+  { name: "Marten Hørger", stage: "The Great Library", day: 1, start: "19:00", end: "20:00" },
+  { name: "Agents Of Time", stage: "The Great Library", day: 1, start: "20:00", end: "21:30" },
+  { name: "Lost Frequencies", stage: "The Great Library", day: 1, start: "21:30", end: "22:45" },
+  { name: "Oliver Heldens", stage: "The Great Library", day: 1, start: "22:45", end: "00:00" },
+  { name: "More to be... (late)", stage: "The Great Library", day: 1, start: "00:00", end: "00:55" },
+  { name: "Jeroen Visser", stage: "Moose Bar", day: 1, start: "12:00", end: "15:00" },
+  { name: "Funkhauser (MB)", stage: "Moose Bar", day: 1, start: "15:00", end: "19:00" },
+  { name: "Je Broer", stage: "Moose Bar", day: 1, start: "19:00", end: "20:00" },
+  { name: "Jelle DK", stage: "Moose Bar", day: 1, start: "20:00", end: "00:00" },
+  { name: "Makasi", stage: "House of Fortune by JBL", day: 1, start: "13:00", end: "14:00" },
+  { name: "Lennert Wolfs", stage: "House of Fortune by JBL", day: 1, start: "14:00", end: "15:00" },
+  { name: "Mark Roma", stage: "House of Fortune by JBL", day: 1, start: "15:00", end: "16:00" },
+  { name: "Fonsi Nieto", stage: "House of Fortune by JBL", day: 1, start: "16:00", end: "17:00" },
+  { name: "More to be... (HoF2)", stage: "House of Fortune by JBL", day: 1, start: "17:00", end: "18:00" },
+  { name: "Lucas & Steve (HoF)", stage: "House of Fortune by JBL", day: 1, start: "18:00", end: "19:00" },
+  { name: "Kris Kross Am...", stage: "House of Fortune by JBL", day: 1, start: "19:00", end: "20:00" },
+  { name: "Yuuki Yoshiyama", stage: "House of Fortune by JBL", day: 1, start: "20:00", end: "21:00" },
+  { name: "MANDY (HoF)", stage: "House of Fortune by JBL", day: 1, start: "21:00", end: "22:00" },
+
+  // ════════════════════════════════════════════════════════
+  // DIMANCHE 19 JUILLET
+  // ════════════════════════════════════════════════════════
+  { name: "Discovery (Sun)", stage: "Mainstage", day: 2, start: "12:00", end: "14:30" },
+  { name: "Hannah Laing", stage: "Mainstage", day: 2, start: "14:30", end: "15:30" },
+  { name: "Karakals", stage: "Mainstage", day: 2, start: "15:30", end: "16:30" },
+  { name: "Malugi", stage: "Mainstage", day: 2, start: "16:30", end: "17:30" },
+  { name: "Kevin de Vries", stage: "Mainstage", day: 2, start: "17:35", end: "18:35" },
+  { name: "B Jones", stage: "Mainstage", day: 2, start: "18:40", end: "19:40" },
+  { name: "SURPRISE", stage: "Mainstage", day: 2, start: "19:40", end: "20:40" },
+  { name: "John Summit", stage: "Mainstage", day: 2, start: "20:40", end: "21:40" },
+  { name: "Alesso", stage: "Mainstage", day: 2, start: "21:45", end: "22:45" },
+  { name: "Calvin Harris", stage: "Mainstage", day: 2, start: "22:50", end: "23:50" },
+  { name: "Neon", stage: "Freedom by Bud", day: 2, start: "12:00", end: "13:30" },
+  { name: "DJ Licious", stage: "Freedom by Bud", day: 2, start: "13:30", end: "15:00" },
+  { name: "Aline Rocha", stage: "Freedom by Bud", day: 2, start: "15:00", end: "16:00" },
+  { name: "Arielle Free", stage: "Freedom by Bud", day: 2, start: "16:00", end: "17:30" },
+  { name: "Jack Shore", stage: "Freedom by Bud", day: 2, start: "17:30", end: "18:30" },
+  { name: "Pegassi", stage: "Freedom by Bud", day: 2, start: "18:30", end: "20:00" },
+  { name: "Chase & Status", stage: "Freedom by Bud", day: 2, start: "20:00", end: "21:00" },
+  { name: "ALOK: Rave The World", stage: "Freedom by Bud", day: 2, start: "21:00", end: "22:00" },
+  { name: "I Hate Models", stage: "Freedom by Bud", day: 2, start: "22:00", end: "23:30" },
+  { name: "Digital Madness", stage: "The Rose Garden", day: 2, start: "12:00", end: "13:00" },
+  { name: "The Z.", stage: "The Rose Garden", day: 2, start: "13:00", end: "14:30" },
+  { name: "Adrenalize", stage: "The Rose Garden", day: 2, start: "14:30", end: "15:30" },
+  { name: "TNT", stage: "The Rose Garden", day: 2, start: "15:30", end: "16:30" },
+  { name: "Rooler", stage: "The Rose Garden", day: 2, start: "16:30", end: "17:30" },
+  { name: "Isaac", stage: "The Rose Garden", day: 2, start: "17:30", end: "18:30" },
+  { name: "Rebelion", stage: "The Rose Garden", day: 2, start: "18:30", end: "19:30" },
+  { name: "Pat B", stage: "The Rose Garden", day: 2, start: "19:30", end: "20:30" },
+  { name: "Sub Zero Project", stage: "The Rose Garden", day: 2, start: "20:30", end: "22:00" },
+  { name: "The Saints", stage: "The Rose Garden", day: 2, start: "22:00", end: "23:00" },
+  { name: "G-Lo", stage: "Elixir", day: 2, start: "13:00", end: "14:00" },
+  { name: "Sako Glitch", stage: "Elixir", day: 2, start: "14:00", end: "15:00" },
+  { name: "Favella Som Si...", stage: "Elixir", day: 2, start: "15:00", end: "16:00" },
+  { name: "DJ FASTA", stage: "Elixir", day: 2, start: "16:00", end: "17:00" },
+  { name: "Noah (Elixir)", stage: "Elixir", day: 2, start: "17:00", end: "18:00" },
+  { name: "Team Damp", stage: "Elixir", day: 2, start: "18:00", end: "19:00" },
+  { name: "Heaven Sam", stage: "Elixir", day: 2, start: "19:00", end: "20:00" },
+  { name: "Karyo", stage: "Elixir", day: 2, start: "20:00", end: "21:00" },
+  { name: "Tribal Kush", stage: "Elixir", day: 2, start: "21:00", end: "22:00" },
+  { name: "Sleazy Stereo", stage: "Elixir", day: 2, start: "22:00", end: "23:00" },
+  { name: "Jeronimo", stage: "Elixir", day: 2, start: "23:00", end: "00:00" },
+  { name: "Klaps F2F Miamor", stage: "Cage", day: 2, start: "12:00", end: "14:00" },
+  { name: "Hurts F2F ROW 1", stage: "Cage", day: 2, start: "14:00", end: "15:30" },
+  { name: "FUMI F2F HUJUS", stage: "Cage", day: 2, start: "15:30", end: "17:00" },
+  { name: "David Löhlein F2F Yasmin r...", stage: "Cage", day: 2, start: "17:00", end: "18:30" },
+  { name: "EMILIJA F2F Frederic.", stage: "Cage", day: 2, start: "18:30", end: "20:00" },
+  { name: "Serafina F2F zwilling", stage: "Cage", day: 2, start: "20:00", end: "21:30" },
+  { name: "Adrián Mills F2F SISU", stage: "Cage", day: 2, start: "21:30", end: "23:00" },
+  { name: "YERUN", stage: "The Rave Cave", day: 2, start: "13:00", end: "15:00" },
+  { name: "Mell Tierra", stage: "The Rave Cave", day: 2, start: "15:00", end: "16:30" },
+  { name: "Dries Smet", stage: "The Rave Cave", day: 2, start: "16:30", end: "17:30" },
+  { name: "Noaffection b2b OM3N", stage: "The Rave Cave", day: 2, start: "17:30", end: "19:00" },
+  { name: "Nederhand", stage: "The Rave Cave", day: 2, start: "19:00", end: "20:00" },
+  { name: "Foxed Up", stage: "The Rave Cave", day: 2, start: "20:00", end: "21:00" },
+  { name: "Mitched", stage: "The Rave Cave", day: 2, start: "21:00", end: "22:00" },
+  { name: "Coco Bevan", stage: "The Rave Cave", day: 2, start: "22:00", end: "23:00" },
+  { name: "Godtripper", stage: "The Rave Cave", day: 2, start: "23:00", end: "23:50" },
+  { name: "Exception", stage: "Planaxis", day: 2, start: "12:00", end: "13:15" },
+  { name: "Punctual", stage: "Planaxis", day: 2, start: "13:15", end: "15:00" },
+  { name: "SABAI", stage: "Planaxis", day: 2, start: "15:00", end: "16:00" },
+  { name: "[IVY]", stage: "Planaxis", day: 2, start: "16:00", end: "17:00" },
+  { name: "Nostalgix", stage: "Planaxis", day: 2, start: "17:00", end: "18:00" },
+  { name: "LEVEL UP", stage: "Planaxis", day: 2, start: "18:00", end: "19:00" },
+  { name: "Arcando", stage: "Planaxis", day: 2, start: "19:00", end: "20:00" },
+  { name: "Malaa's Alter...", stage: "Planaxis", day: 2, start: "20:00", end: "21:00" },
+  { name: "Liquid Stranger", stage: "Planaxis", day: 2, start: "21:00", end: "22:00" },
+  { name: "Seven Lions", stage: "Planaxis", day: 2, start: "22:00", end: "23:00" },
+  { name: "Subtronics", stage: "Planaxis", day: 2, start: "23:00", end: "00:00" },
+  { name: "Le Windey", stage: "Melodia by Corona", day: 2, start: "12:00", end: "13:30" },
+  { name: "DJ Gee", stage: "Melodia by Corona", day: 2, start: "13:30", end: "14:30" },
+  { name: "Christian82", stage: "Melodia by Corona", day: 2, start: "14:30", end: "15:30" },
+  { name: "Tania Moon", stage: "Melodia by Corona", day: 2, start: "15:30", end: "16:30" },
+  { name: "CRISTINA TOSIO", stage: "Melodia by Corona", day: 2, start: "16:30", end: "18:00" },
+  { name: "Lunnas", stage: "Melodia by Corona", day: 2, start: "18:00", end: "19:00" },
+  { name: "Marta Loe b2b...", stage: "Melodia by Corona", day: 2, start: "19:00", end: "20:00" },
+  { name: "Delafino", stage: "Melodia by Corona", day: 2, start: "20:00", end: "21:00" },
+  { name: "Dave Hang", stage: "Melodia by Corona", day: 2, start: "21:00", end: "22:00" },
+  { name: "Felix Da Funk", stage: "Melodia by Corona", day: 2, start: "22:00", end: "23:00" },
+  { name: "Sentin", stage: "Celestia by Kucoin", day: 2, start: "12:00", end: "13:30" },
+  { name: "Cyria (Hybrid)", stage: "Celestia by Kucoin", day: 2, start: "13:30", end: "15:00" },
+  { name: "Fake Mood", stage: "Celestia by Kucoin", day: 2, start: "15:00", end: "16:30" },
+  { name: "Oona Dahl", stage: "Celestia by Kucoin", day: 2, start: "16:30", end: "18:00" },
+  { name: "Helsloot", stage: "Celestia by Kucoin", day: 2, start: "18:00", end: "19:30" },
+  { name: "MXGPU (Hybrid)", stage: "Celestia by Kucoin", day: 2, start: "19:30", end: "21:00" },
+  { name: "Nico Morano b2b Xinobi", stage: "Celestia by Kucoin", day: 2, start: "21:00", end: "22:30" },
+  { name: "Flour", stage: "Atmosphere", day: 2, start: "12:00", end: "14:00" },
+  { name: "VE/RA", stage: "Atmosphere", day: 2, start: "14:00", end: "16:00" },
+  { name: "Blondex", stage: "Atmosphere", day: 2, start: "16:00", end: "17:30" },
+  { name: "SHDW b2b ÜBERKIKZ", stage: "Atmosphere", day: 2, start: "17:30", end: "19:00" },
+  { name: "Øtta", stage: "Atmosphere", day: 2, start: "19:00", end: "20:30" },
+  { name: "Anetha", stage: "Atmosphere", day: 2, start: "20:30", end: "22:30" },
+  { name: "Amelie Lens", stage: "Atmosphere", day: 2, start: "22:30", end: "23:55" },
+  { name: "Massignan.y", stage: "Core", day: 2, start: "12:00", end: "14:00" },
+  { name: "Ineffekt", stage: "Core", day: 2, start: "14:00", end: "16:00" },
+  { name: "Fafi Abdel Nour", stage: "Core", day: 2, start: "16:00", end: "18:00" },
+  { name: "Sedef Adasi", stage: "Core", day: 2, start: "18:00", end: "20:00" },
+  { name: "Avalon Emerson b2b Ben UFO", stage: "Core", day: 2, start: "20:00", end: "22:00" },
+  { name: "Job Jobse", stage: "Core", day: 2, start: "22:00", end: "23:50" },
+  { name: "Poleen", stage: "Crystal Garden", day: 2, start: "12:00", end: "13:30" },
+  { name: "Re-Type", stage: "Crystal Garden", day: 2, start: "13:30", end: "15:00" },
+  { name: "Hitty", stage: "Crystal Garden", day: 2, start: "15:00", end: "16:30" },
+  { name: "ELFIGO", stage: "Crystal Garden", day: 2, start: "16:30", end: "18:00" },
+  { name: "Wade", stage: "Crystal Garden", day: 2, start: "18:00", end: "19:30" },
+  { name: "DJ Gigola", stage: "Crystal Garden", day: 2, start: "19:30", end: "21:00" },
+  { name: "Oscar and the Wolf", stage: "Crystal Garden", day: 2, start: "21:00", end: "22:00" },
+  { name: "DJ Tennis b2b Vintage Culture", stage: "Crystal Garden", day: 2, start: "22:00", end: "23:30" },
+  { name: "Diètro", stage: "The Great Library", day: 2, start: "12:00", end: "13:00" },
+  { name: "Yazzmin", stage: "The Great Library", day: 2, start: "13:00", end: "14:00" },
+  { name: "James Carter", stage: "The Great Library", day: 2, start: "14:00", end: "15:00" },
+  { name: "Viktor", stage: "The Great Library", day: 2, start: "15:00", end: "16:00" },
+  { name: "Hypaton", stage: "The Great Library", day: 2, start: "16:00", end: "17:00" },
+  { name: "Gabry Ponte", stage: "The Great Library", day: 2, start: "17:00", end: "18:00" },
+  { name: "MATTN", stage: "The Great Library", day: 2, start: "18:00", end: "19:00" },
+  { name: "Blasterjaxx", stage: "The Great Library", day: 2, start: "19:00", end: "20:00" },
+  { name: "Gryffin", stage: "The Great Library", day: 2, start: "20:00", end: "21:00" },
+  { name: "Dimitri Vegas b2b Timmy Trumpet", stage: "The Great Library", day: 2, start: "21:00", end: "22:00" },
+  { name: "Afrojack", stage: "The Great Library", day: 2, start: "22:00", end: "23:00" },
+  { name: "Vini Vici", stage: "The Great Library", day: 2, start: "23:00", end: "23:55" },
+  { name: "Tom Cosyns", stage: "Moose Bar", day: 2, start: "12:00", end: "16:00" },
+  { name: "Les Mecs Eclectics", stage: "Moose Bar", day: 2, start: "16:00", end: "19:00" },
+  { name: "Effe Serieus", stage: "Moose Bar", day: 2, start: "19:00", end: "20:00" },
+  { name: "Jerrooo", stage: "Moose Bar", day: 2, start: "20:00", end: "00:00" },
+  { name: "DJ GAB", stage: "House of Fortune by JBL", day: 2, start: "13:00", end: "14:00" },
+  { name: "Krevix", stage: "House of Fortune by JBL", day: 2, start: "14:00", end: "15:00" },
+  { name: "AdamK", stage: "House of Fortune by JBL", day: 2, start: "15:00", end: "16:00" },
+  { name: "Sofia Cristo", stage: "House of Fortune by JBL", day: 2, start: "16:00", end: "17:00" },
+  { name: "Sam Hofman", stage: "House of Fortune by JBL", day: 2, start: "17:00", end: "18:00" },
+  { name: "NORO$T", stage: "House of Fortune by JBL", day: 2, start: "18:00", end: "19:00" },
+  { name: "Da Tweekaz (HoF)", stage: "House of Fortune by JBL", day: 2, start: "19:00", end: "20:00" },
+  { name: "More to be an... (HoF Sun)", stage: "House of Fortune by JBL", day: 2, start: "20:00", end: "21:00" },
+  { name: "Blasterjaxx (HoF)", stage: "House of Fortune by JBL", day: 2, start: "21:00", end: "22:00" },
+];
+
+function timeToMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  return (h < 6 ? h + 24 : h) * 60 + m;
+}
+
+const MY_VOTES_KEY = "tml2026_my_votes"; // local: which artistIds *I* voted for
+
+function App() {
+  const [search, setSearch] = useState("");
+  const [browseDay, setBrowseDay] = useState(0);
+  const [addMode, setAddMode] = useState("browse");
+  const [votes, setVotes] = useState({}); // { artistId: count } from server
+  const [myVotes, setMyVotes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(MY_VOTES_KEY) || "[]"); } catch (e) { return []; }
+  });
+  const [activeDay, setActiveDay] = useState(0);
+  const [view, setView] = useState("search");
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [configError, setConfigError] = useState(false);
+
+  async function fetchVotes() {
+    if (!API_URL || API_URL.includes("COLLE_TON_URL")) {
+      setConfigError(true);
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setVotes(data || {});
+    } catch (e) {
+      console.error("Fetch failed", e);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchVotes();
+    const interval = setInterval(fetchVotes, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(MY_VOTES_KEY, JSON.stringify(myVotes));
+  }, [myVotes]);
+
+  async function toggleVote(artistId) {
+    const hasVoted = myVotes.includes(artistId);
+    const action = hasVoted ? "unvote" : "vote";
+
+    // optimistic UI update
+    setMyVotes((prev) => hasVoted ? prev.filter((id) => id !== artistId) : [...prev, artistId]);
+    setVotes((prev) => ({ ...prev, [artistId]: Math.max(0, (prev[artistId] || 0) + (hasVoted ? -1 : 1)) }));
+
+    setSyncing(true);
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action, artistId }),
+      });
+      const data = await res.json();
+      if (data.votes) setVotes(data.votes);
+    } catch (e) {
+      console.error("Vote sync failed", e);
+    }
+    setSyncing(false);
+  }
+
+  const myEntries = useMemo(() => {
+    return myVotes
+      .map((id) => ALL_ARTISTS.find((a) => `${a.name}-${a.day}` === id))
+      .filter(Boolean)
+      .map((a) => ({ ...a, artistId: `${a.name}-${a.day}` }));
+  }, [myVotes]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return [];
+    const q = search.toLowerCase();
+    return ALL_ARTISTS.filter((a) => a.name.toLowerCase().includes(q)).slice(0, 12);
+  }, [search]);
+
+  const browseArtists = useMemo(() => {
+    const dayArtists = ALL_ARTISTS.filter((a) => a.day === browseDay);
+    const byStage = {};
+    dayArtists.forEach((a) => {
+      if (!byStage[a.stage]) byStage[a.stage] = [];
+      byStage[a.stage].push(a);
+    });
+    Object.keys(byStage).forEach((s) => byStage[s].sort((a, b) => (timeToMinutes(a.start) ?? 0) - (timeToMinutes(b.start) ?? 0)));
+    return byStage;
+  }, [browseDay]);
+
+  const daySelected = myEntries.filter((e) => e.day === activeDay);
+  const DAY_EMOJIS = ["🌅", "☀️", "🌙"];
+
+  const stagesForDay = useMemo(() => {
+    const order = [];
+    daySelected.forEach((s) => { if (!order.includes(s.stage)) order.push(s.stage); });
+    return order;
+  }, [daySelected]);
+
+  const gridBounds = useMemo(() => {
+    if (daySelected.length === 0) return { min: 12 * 60, max: 24 * 60 };
+    let min = Infinity, max = -Infinity;
+    daySelected.forEach((s) => {
+      const st = timeToMinutes(s.start), en = timeToMinutes(s.end);
+      if (st !== null) min = Math.min(min, st);
+      if (en !== null) max = Math.max(max, en);
+    });
+    min = Math.floor(min / 60) * 60;
+    max = Math.ceil(max / 60) * 60;
+    return { min, max };
+  }, [daySelected]);
+
+  const PX_PER_MIN = 3.2;
+  const ROW_HEIGHT = 64;
+  const LABEL_WIDTH = 96;
+
+  function formatHourLabel(mins) {
+    const h = Math.floor(mins / 60) % 24;
+    return `${String(h).padStart(2, "0")}:00`;
+  }
+
+  const hourMarks = useMemo(() => {
+    const marks = [];
+    for (let m = gridBounds.min; m <= gridBounds.max; m += 60) marks.push(m);
+    return marks;
+  }, [gridBounds]);
+
+  function borderWidthForVotes(count) {
+    if (count >= 5) return 4;
+    if (count >= 3) return 3;
+    if (count >= 1) return 2;
+    return 1;
+  }
+
+  if (configError) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "#0a0015", color: "#fff", fontFamily: "system-ui", padding: 24,
+      }}>
+        <div style={{ maxWidth: 420, textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 14 }}>⚙️</div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, color: "#FFD700" }}>Configuration requise</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+            Ouvre ce fichier HTML dans un éditeur de texte, trouve la ligne <code style={{ background: "rgba(255,255,255,0.1)", padding: "2px 6px", borderRadius: 4 }}>API_URL</code> tout en haut, et colle l'URL de ton Google Apps Script (voir INSTRUCTIONS.md).
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "linear-gradient(160deg, #0a0015 0%, #0d001f 45%, #001a0d 100%)", color: "#FFD700",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🎵</div>
+          <div style={{ fontSize: 13, opacity: 0.7 }}>Chargement des votes du groupe…</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(160deg, #0a0015 0%, #0d001f 45%, #001a0d 100%)",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      color: "#fff",
+    }}>
+      <div style={{
+        background: "linear-gradient(180deg, rgba(255,215,0,0.10) 0%, transparent 100%)",
+        borderBottom: "1px solid rgba(255,215,0,0.18)",
+        padding: "18px 20px 14px", textAlign: "center", position: "relative",
+      }}>
+        <div style={{ fontSize: 10, letterSpacing: 5, color: "#FFD700", textTransform: "uppercase", opacity: 0.75, marginBottom: 4 }}>
+          Tomorrowland Belgium 2026 · Weekend 1
+        </div>
+        <div style={{
+          fontSize: 24, fontWeight: 900, letterSpacing: 2,
+          background: "linear-gradient(90deg, #FFD700 0%, #fff 50%, #FFD700 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        }}>MA TIMETABLE</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+          17 · 18 · 19 Juillet · De Schorre, Boom
+        </div>
+        {syncing && (
+          <div style={{ position: "absolute", top: 18, right: 16, fontSize: 11, color: "rgba(255,255,255,0.4)" }}>💾 sync…</div>
+        )}
+      </div>
+
+      <div style={{
+        textAlign: "center", padding: "8px 16px", fontSize: 11, color: "rgba(255,255,255,0.45)",
+        background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        🗳️ Vote pour les artistes que tu veux voir — les votes sont visibles par tout le groupe
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, padding: "14px 20px 0" }}>
+        {[{ key: "search", label: "🔍 Ajouter" }, { key: "timetable", label: "📅 Ma timetable" }].map(({ key, label }) => (
+          <button key={key} onClick={() => setView(key)} style={{
+            padding: "8px 20px", borderRadius: 20, border: "1px solid",
+            borderColor: view === key ? "#FFD700" : "rgba(255,255,255,0.13)",
+            background: view === key ? "rgba(255,215,0,0.11)" : "transparent",
+            color: view === key ? "#FFD700" : "rgba(255,255,255,0.45)",
+            cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {view === "search" && (
+        <div style={{ padding: "18px 16px 60px", maxWidth: 600, margin: "0 auto" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+            {[{ key: "browse", label: "📋 Parcourir par jour" }, { key: "search", label: "🔍 Rechercher" }].map(({ key, label }) => (
+              <button key={key} onClick={() => setAddMode(key)} style={{
+                flex: 1, padding: "9px 10px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                background: addMode === key ? "rgba(255,215,0,0.1)" : "rgba(255,255,255,0.03)",
+                border: `1px solid ${addMode === key ? "rgba(255,215,0,0.35)" : "rgba(255,255,255,0.08)"}`,
+                color: addMode === key ? "#FFD700" : "rgba(255,255,255,0.45)", cursor: "pointer",
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {addMode === "search" ? (
+            <>
+              <div style={{ position: "relative", marginBottom: 14 }}>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Recherche un artiste… ex: Calvin, Armin, Fisher"
+                  style={{
+                    width: "100%", padding: "13px 40px 13px 16px", borderRadius: 12,
+                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)",
+                    color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box",
+                  }}
+                />
+                {search && (
+                  <button onClick={() => setSearch("")} style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 20,
+                  }}>×</button>
+                )}
+              </div>
+
+              {filtered.map((a) => {
+                const artistId = `${a.name}-${a.day}`;
+                const count = votes[artistId] || 0;
+                const voted = myVotes.includes(artistId);
+                return (
+                  <button key={artistId} onClick={() => toggleVote(artistId)} style={{
+                    display: "flex", alignItems: "center", gap: 10, width: "100%",
+                    padding: "11px 14px", marginBottom: 5, borderRadius: 10,
+                    background: voted ? "rgba(255,215,0,0.08)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${voted ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.09)"}`,
+                    color: "#fff", cursor: "pointer", textAlign: "left",
+                  }}>
+                    <div style={{ width: 9, height: 9, borderRadius: "50%", flexShrink: 0, background: STAGES[a.stage]?.color || "#888" }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{a.name}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>
+                        {a.stage} · {DAY_EMOJIS[a.day]} {DAYS[a.day].split(" ")[0]} · {a.start} → {a.end}
+                      </div>
+                    </div>
+                    {count > 0 && (
+                      <span style={{ fontSize: 11, color: "#FFD700", fontWeight: 700, marginRight: 4 }}>👍{count}</span>
+                    )}
+                    <span style={{ fontSize: 18, color: voted ? "#FFD700" : "rgba(255,215,0,0.5)" }}>{voted ? "✓" : "+"}</span>
+                  </button>
+                );
+              })}
+
+              {search && filtered.length === 0 && (
+                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.28)", fontSize: 13, padding: "24px 0" }}>
+                  Aucun résultat
+                </div>
+              )}
+
+              {!search && (
+                <div style={{ textAlign: "center", padding: "48px 20px", color: "rgba(255,255,255,0.22)" }}>
+                  <div style={{ fontSize: 40, marginBottom: 10 }}>🎵</div>
+                  <div style={{ fontSize: 14 }}>Tape un nom pour commencer</div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+                {DAYS.map((d, i) => (
+                  <button key={i} onClick={() => setBrowseDay(i)} style={{
+                    flex: 1, padding: "8px 6px", borderRadius: 10, cursor: "pointer",
+                    background: browseDay === i ? "rgba(255,215,0,0.13)" : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${browseDay === i ? "rgba(255,215,0,0.48)" : "rgba(255,255,255,0.09)"}`,
+                    color: browseDay === i ? "#FFD700" : "rgba(255,255,255,0.4)",
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{DAY_EMOJIS[i]} {d.split(" ")[0]}</div>
+                  </button>
+                ))}
+              </div>
+
+              {Object.entries(browseArtists).map(([stage, artists]) => (
+                <div key={stage} style={{ marginBottom: 16 }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6, marginBottom: 6,
+                    padding: "4px 8px", borderRadius: 6, background: `${STAGES[stage]?.color}22`,
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: STAGES[stage]?.color || "#888" }} />
+                    <span style={{ fontSize: 12, fontWeight: 800, color: STAGES[stage]?.color || "#fff" }}>{stage}</span>
+                  </div>
+                  {artists.map((a) => {
+                    const artistId = `${a.name}-${a.day}`;
+                    const count = votes[artistId] || 0;
+                    const voted = myVotes.includes(artistId);
+                    return (
+                      <button key={artistId} onClick={() => toggleVote(artistId)} style={{
+                        display: "flex", alignItems: "center", gap: 10, width: "100%",
+                        padding: "9px 12px", marginBottom: 4, borderRadius: 8,
+                        background: voted ? "rgba(255,215,0,0.08)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${voted ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.07)"}`,
+                        color: "#fff", cursor: "pointer", textAlign: "left",
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{a.name}</div>
+                          <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)" }}>{a.start} → {a.end}</div>
+                        </div>
+                        {count > 0 && (
+                          <span style={{ fontSize: 11, color: "#FFD700", fontWeight: 700, marginRight: 4 }}>👍{count}</span>
+                        )}
+                        <span style={{ fontSize: 16, color: voted ? "#FFD700" : "rgba(255,215,0,0.5)" }}>{voted ? "✓" : "+"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </>
+          )}
+
+          {myEntries.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, letterSpacing: 4, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", margin: "24px 0 10px" }}>
+                Mes votes · {myEntries.length}
+              </div>
+              {[0, 1, 2].map((dayIdx) => {
+                const items = myEntries.filter((s) => s.day === dayIdx);
+                if (!items.length) return null;
+                return (
+                  <div key={dayIdx} style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 12, color: "#FFD700", fontWeight: 700, marginBottom: 6 }}>
+                      {DAY_EMOJIS[dayIdx]} {DAYS[dayIdx]}
+                    </div>
+                    {items.map((item) => (
+                      <div key={item.artistId} style={{
+                        marginBottom: 5, borderRadius: 10, background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: STAGES[item.stage]?.color || "#888", flexShrink: 0 }} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 1 }}>
+                              {item.stage} · {item.start} → {item.end} · 👍{votes[item.artistId] || 0}
+                            </div>
+                          </div>
+                          <button onClick={() => toggleVote(item.artistId)} style={{
+                            padding: "3px 8px", borderRadius: 5, background: "rgba(255,80,80,0.08)",
+                            border: "1px solid rgba(255,80,80,0.18)", color: "rgba(255,100,100,0.8)", cursor: "pointer", fontSize: 14,
+                          }}>×</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
+
+      {view === "timetable" && (
+        <div style={{ padding: "18px 14px 60px" }}>
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 18 }}>
+            {DAYS.map((d, i) => {
+              const cnt = myEntries.filter((s) => s.day === i).length;
+              return (
+                <button key={i} onClick={() => setActiveDay(i)} style={{
+                  padding: "8px 13px", borderRadius: 10, cursor: "pointer",
+                  background: activeDay === i ? "rgba(255,215,0,0.13)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${activeDay === i ? "rgba(255,215,0,0.48)" : "rgba(255,255,255,0.09)"}`,
+                  color: activeDay === i ? "#FFD700" : "rgba(255,255,255,0.4)",
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{DAY_EMOJIS[i]} {d.split(" ")[0]}</div>
+                  <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>{d.split(" ").slice(1).join(" ")}</div>
+                  {cnt > 0 && <div style={{ fontSize: 10, color: "#FFD700", marginTop: 3 }}>{cnt} set{cnt > 1 ? "s" : ""}</div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {daySelected.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.22)" }}>
+              <div style={{ fontSize: 34, marginBottom: 10 }}>🗓️</div>
+              <div style={{ fontSize: 14 }}>Aucun artiste pour ce jour</div>
+              <div style={{ fontSize: 12, marginTop: 6, opacity: 0.6 }}>Va dans "Ajouter" pour voter</div>
+            </div>
+          ) : (
+            <>
+              <div style={{
+                overflowX: "auto", overflowY: "hidden", borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.25)",
+                WebkitOverflowScrolling: "touch",
+              }}>
+                <div style={{ width: LABEL_WIDTH + (gridBounds.max - gridBounds.min) * PX_PER_MIN + 16, position: "relative" }}>
+                  <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 3, background: "#13021f", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div style={{ width: LABEL_WIDTH, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.08)" }} />
+                    <div style={{ position: "relative", height: 30, flex: 1 }}>
+                      {hourMarks.map((m) => (
+                        <div key={m} style={{
+                          position: "absolute", left: (m - gridBounds.min) * PX_PER_MIN,
+                          top: 0, height: "100%", display: "flex", alignItems: "center",
+                          fontSize: 11, color: "rgba(255,255,255,0.45)", paddingLeft: 4,
+                          borderLeft: "1px solid rgba(255,255,255,0.07)", minWidth: 1,
+                        }}>{formatHourLabel(m)}</div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {stagesForDay.map((stage) => {
+                    const sc = STAGES[stage] || { color: "#888", text: "#fff" };
+                    const stageItems = daySelected.filter((s) => s.stage === stage);
+                    return (
+                      <div key={stage} style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{
+                          width: LABEL_WIDTH, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.08)",
+                          display: "flex", alignItems: "center", padding: "0 8px", background: "rgba(255,255,255,0.02)",
+                        }}>
+                          <div>
+                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: sc.color, marginBottom: 4 }} />
+                            <div style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1.25, color: "rgba(255,255,255,0.85)" }}>{stage}</div>
+                          </div>
+                        </div>
+                        <div style={{ position: "relative", height: ROW_HEIGHT, flex: 1 }}>
+                          {hourMarks.map((m) => (
+                            <div key={m} style={{
+                              position: "absolute", left: (m - gridBounds.min) * PX_PER_MIN, top: 0, bottom: 0,
+                              borderLeft: "1px solid rgba(255,255,255,0.05)",
+                            }} />
+                          ))}
+                          {stageItems.map((item) => {
+                            const st = timeToMinutes(item.start);
+                            const en = timeToMinutes(item.end);
+                            const left = (st - gridBounds.min) * PX_PER_MIN;
+                            const width = Math.max((en - st) * PX_PER_MIN - 3, 30);
+                            const count = votes[item.artistId] || 0;
+                            const bw = borderWidthForVotes(count);
+                            return (
+                              <div key={item.artistId} title={`${item.name} · ${item.start}–${item.end} · ${count} vote(s)`} style={{
+                                position: "absolute", left, top: 6, width, height: ROW_HEIGHT - 12,
+                                background: sc.color, color: sc.text, borderRadius: 7,
+                                padding: "5px 7px", overflow: "hidden", boxSizing: "border-box",
+                                border: `${bw}px solid rgba(255,255,255,0.9)`,
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                              }}>
+                                <div style={{ fontSize: 11.5, fontWeight: 800, lineHeight: 1.15, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+                                  {item.name}
+                                </div>
+                                <div style={{ fontSize: 9.5, opacity: 0.8, marginTop: 2, whiteSpace: "nowrap" }}>
+                                  {item.start}–{item.end} · 👍{count}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ textAlign: "center", fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                ← fais glisser horizontalement · bordure plus épaisse = plus de votes →
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
